@@ -1,0 +1,62 @@
+@startuml
+hide circle
+skinparam linetype polyline
+top to bottom direction
+
+entity product as "product" {
+  * id INT UNSIGNED
+  --
+  * title VARCHAR(128)
+  * short_description VARCHAR(512)
+  * description TEXT
+  * active  TINYINT(1) UNSIGNED
+  * price DECIMAL(10,2)
+  * weight DECIMAL(10,2)
+  * created_at DATETIME
+  * updated_at DATETIME
+}
+entity product_translation as "product_translation" {
+  * id INT UNSIGNED
+  --
+  * **FK** product_id INT UNSIGNED
+  * language CHAR(2) COMMENT 'ISO 639-1'
+  * title VARCHAR(128)
+  * short_description VARCHAR(512)
+  * description TEXT
+  * created_at DATETIME
+  * updated_at DATETIME
+}
+entity product_category as "product_category" {
+  * id INT UNSIGNED
+  --
+  * **FK** product_id INT UNSIGNED  
+  * **FK** category_id INT UNSIGNED
+  --
+  CONSTRAINT uc_product_id_category_id UNIQUE (product_id, category_id)
+}
+entity category as "category" {
+  * id INT UNSIGNED
+  --
+  * title VARCHAR(128)  
+  * short_description VARCHAR(512)
+  * description TEXT
+  * active  TINYINT(1) UNSIGNED
+  * path VARCHAR(32)
+  * level TINYINT UNSIGNED
+  * created_at DATETIME
+  * updated_at DATETIME
+  **FK** parent_id INT UNSIGNED
+}
+entity product_image as "product_image" {
+  * id INT UNSIGNED
+  --
+  * **FK** product_id INT UNSIGNED
+  * filename VARCHAR(64)  
+  * created_at DATETIME
+}
+product ||---o{  product_translation
+product ||---o{  product_category
+product_category }o---||  category
+category |o..o|  category
+product ||---o{  product_image
+@enduml
