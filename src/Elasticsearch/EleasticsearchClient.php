@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Elasticsearch;
 
-class EleasticsearchClient
+final class EleasticsearchClient
 {
     /**
      * Index new entry or reindex old one
@@ -10,7 +12,7 @@ class EleasticsearchClient
      * @param $id
      * @param array $body
      */
-    public function index($id, array $body)
+    public function index($id, array $body): void
     {
 
     }
@@ -23,7 +25,7 @@ class EleasticsearchClient
      * @param int|null $offset
      * @return array
      */
-    public function query(string $query, ?int $limit = null, ?int $offset = null)
+    public function query(string $query, ?int $limit = null, ?int $offset = null): array
     {
 
     }
@@ -33,7 +35,7 @@ class EleasticsearchClient
      *
      * @param $id
      */
-    public function delete($id)
+    public function delete($id): void
     {
 
     }

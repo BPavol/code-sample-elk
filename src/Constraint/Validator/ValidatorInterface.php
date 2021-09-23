@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Constraint\Validator;
 
 use App\Constraint\ConstraintInterface;
@@ -14,12 +16,12 @@ interface ValidatorInterface
      * @param $value
      * @return mixed
      */
-    public function validate(ConstraintInterface $constraint, $value);
+    public function validate(ConstraintInterface $constraint, $value): void;
 
     /**
      * Return validation context
      *
      * @return Context
      */
-    public function getContext();
+    public function getContext(): Context;
 }

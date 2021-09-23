@@ -1,13 +1,18 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Message;
 
 /**
- * Message for message handler
+ * Message for creating fulltext entry in Elasticsearch
  */
-class ElasticsearchProductMessage
+final class ElasticsearchProductMessage
 {
+    /** @var int  */
     private int $id;
+
+    /** @var bool  */
     private bool $forDelete;
 
     public function __construct(int $id, bool $forDelete = false)

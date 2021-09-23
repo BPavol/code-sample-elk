@@ -3,6 +3,7 @@ Features:
 - CRUD REST API endpoints for a product and product categories
 - Elasticsearch for performance boost in searching
 - Redis cache
+- PHP 8.0
 
 ## Redis cache
 Redis cache is always invalidated if some products are changed.

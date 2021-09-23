@@ -1,62 +1,76 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Controller\API;
 
 use App\Cache\CacheInterface;
 use App\Cache\ItemInterface;
 use App\Entity\Category;
+use App\Http\JsonResponse;
 use App\Message\ElasticsearchProductMessage;
 use App\Message\MessageBusInterface;
 use App\Repository\CategoryRepository;
 
 final class CategoryController
 {
+    /** @var CacheInterface  */
     private CacheInterface $cache;
-    private CategoryRepository $repository;
+
+    /** @var CategoryRepository  */
+    private CategoryRepository $categoryRepository;
+
+    /** @var MessageBusInterface  */
     private MessageBusInterface $bus;
 
     /**
      * Get whole category tree with base information
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $key = 'category_controller_index';
-        return $this->cache->get($key, function (ItemInterface $item) {
-            $item->expiresAfter(3600);
-            $item->tag('category');
+        return new JsonResponse(
+                $this->cache->get($key, function (ItemInterface $item) {
+                $item->expiresAfter(3600);
+                $item->tag('category');
 
-            return $this->repository->findBy(['active' => true]);
-        });
+                return $this->categoryRepository->findBy(['active' => true]);
+            })
+        );
     }
 
     /**
      * Get all childs with base information by parent category id
      */
-    public function getChilds(int $parentId)
+    public function getChilds(int $parentId): JsonResponse
     {
         $key = sprintf('category_controller_get_childs_%s', $parentId);
-        return $this->cache->get($key, function (ItemInterface $item) use ($parentId) {
-            $item->expiresAfter(3600);
-            $item->tag('category');
+        return new JsonResponse(
+            $this->cache->get($key, function (ItemInterface $item) use ($parentId) {
+                $item->expiresAfter(3600);
+                $item->tag('category');
 
-            return $this->repository->findBy([
-                'parent_id' => $parentId
-            ]);
-        });
+                return $this->categoryRepository->findBy([
+                    'parent_id' => $parentId
+                ]);
+            })
+        );
     }
 
     /**
      * Get category details by category id
      */
-    public function view(int $id)
+    public function view(int $id): JsonResponse
     {
         $key = sprintf('category_controller_view_%s', $id);
-        return $this->cache->get($key, function (ItemInterface $item) use ($id) {
-            $item->expiresAfter(3600);
-            $item->tag('category');
+        return new JsonResponse(
+            $this->cache->get($key, function (ItemInterface $item) use ($id) {
+                $item->expiresAfter(3600);
+                $item->tag('category');
 
-            return $this->repository->find($id);
-        });
+                return $this->categoryRepository->find($id);
+            })
+        );
     }
 
     /**
@@ -64,7 +78,7 @@ final class CategoryController
      */
     public function add()
     {
-
+        return new JsonResponse();
     }
 
     /**
@@ -73,12 +87,18 @@ final class CategoryController
      *
      * @param Category $category
      */
-    public function edit(Category $category)
+    public function edit(Category $category): JsonResponse
     {
         $this->cache->invalidateTags(['category']);
+
         // Flush entity
         // Loop through all products in category and reindex them in Elasticsearch asynchronously
-        $this->bus->dispatch(new ElasticsearchProductMessage(/*$productId*/));
+        $productIds = [];
+        foreach ($productIds as $productId) {
+            $this->bus->dispatch(new ElasticsearchProductMessage($productId));
+        }
+
+        return new JsonResponse();
     }
 
     /**
@@ -86,8 +106,10 @@ final class CategoryController
      *
      * @param Category $category
      */
-    public function delete(Category $category)
+    public function delete(Category $category): JsonResponse
     {
         $this->cache->invalidateTags(['category']);
+
+        return new JsonResponse();
     }
 }

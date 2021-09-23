@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Constraint;
 
 use App\Constraint\Validator\ProductValidator;
 
-class ProductConstraint implements ConstraintInterface
+final class ProductConstraint implements ConstraintInterface
 {
     /**
      * @inheritDoc

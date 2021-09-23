@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Controller\API;
 
 use App\Cache\CacheInterface;
@@ -10,17 +12,27 @@ use App\Elasticsearch\EleasticsearchClient;
 use App\Entity\Category;
 use App\Entity\Product;
 use App\Entity\ProductImage;
+use App\Http\JsonResponse;
 use App\Message\ElasticsearchProductMessage;
 use App\Message\MessageBusInterface;
 use App\Repository\ProductRepository;
 
 final class ProductController
 {
+    /** @var CacheInterface  */
     private CacheInterface $cache;
+
+    /** @var EleasticsearchClient  */
     private EleasticsearchClient $client;
+
+    /** @var MessageBusInterface  */
     private MessageBusInterface $bus;
+
+    /** @var Validator  */
     private Validator $validator;
-    private ProductRepository $repository;
+
+    /** @var ProductRepository  */
+    private ProductRepository $productRepository;
 
     /**
      * Search product in all categories and return base information.
@@ -29,23 +41,25 @@ final class ProductController
      * @param string|null $term
      * @param int $page
      */
-    public function index(?string $term, int $page)
+    public function index(?string $term, int $page): JsonResponse
     {
         $key = sprintf('product_controller_index_%s_%d', $term, $page);
-        return $this->cache->get($key, function (ItemInterface $item) use ($term, $page) {
-            $item->expiresAfter(3600);
-            $item->tag('product');
+        return new JsonResponse(
+            $this->cache->get($key, function (ItemInterface $item) use ($term, $page) {
+                $item->expiresAfter(3600);
+                $item->tag('product');
 
-            if ($term === null) {
-                return $this->repository->findBy(['active' => true],10, ($page-1)*10);
-            }
+                if ($term === null) {
+                    return $this->productRepository->findBy(['active' => true],10, ($page-1)*10);
+                }
 
-            // Product ids in array
-            $elkResults = $this->client->query($term, 10, ($page-1)*10);
-            return $this->repository->findBy([
-                'id' => $elkResults,
-            ]);
-        });
+                // Product ids in array
+                $elkResults = $this->client->query($term, 10, ($page-1)*10);
+                return $this->productRepository->findBy([
+                    'id' => $elkResults,
+                ]);
+            })
+        );
     }
 
     /**
@@ -53,38 +67,42 @@ final class ProductController
      *
      * @param Category $category
      */
-    public function getByCategory(Category $category, int $page)
+    public function getByCategory(Category $category, int $page): JsonResponse
     {
         $key = sprintf('product_controller_get_by_category_%d_%d', $category->getId(), $page);
-        return $this->cache->get($key, function (ItemInterface $item) use ($category, $page) {
-            $item->expiresAfter(3600);
-            $item->tag('product');
+        return new JsonResponse(
+            $this->cache->get($key, function (ItemInterface $item) use ($category, $page) {
+                $item->expiresAfter(3600);
+                $item->tag('product');
 
-            return $this->repository->findBy([
-                'category_id' => $category,
-            ], 10, ($page-1)*10);
-        });
+                return $this->productRepository->findBy([
+                    'category_id' => $category,
+                ], 10, ($page-1)*10);
+            })
+        );
     }
 
     /**
      * Get product details by product id
      */
-    public function view(int $id)
+    public function view(int $id): JsonResponse
     {
         $key = sprintf('product_controller_view_%d', $id);
-        return $this->cache->get($key, function (ItemInterface $item) use ($id) {
-            $item->expiresAfter(3600);
-            $item->tag('product');
+        return new JsonResponse(
+            $this->cache->get($key, function (ItemInterface $item) use ($id) {
+                $item->expiresAfter(3600);
+                $item->tag('product');
 
-            return $this->repository->find($id);
-        });
+                return $this->productRepository->find($id);
+            })
+        );
     }
 
     /**
      * Create new product and dispatch message
      * for insertion to Elasticsearch
      */
-    public function add()
+    public function add(): JsonResponse
     {
         $this->cache->invalidateTags(['product']);
 
@@ -93,30 +111,32 @@ final class ProductController
         $validatorContext = $this->validator->getContext();
         $errors = $validatorContext->getErrors();
         if ($errors) {
-            return $errors;
+            return new JsonResponse(['errors' => $errors], 500);
         }
 
         // Flush entity
         $this->bus->dispatch(new ElasticsearchProductMessage($product->getId()));
+        return new JsonResponse();
     }
 
     /**
      * Update existing product and dispatch message
      * for index update in Elasticsearch
      */
-    public function edit(int $id)
+    public function edit(Product $product): JsonResponse
     {
-        $this->cache->invalidateTags(['product']);
-
         $this->validator->validate(new ProductConstraint(), $product);
         $validatorContext = $this->validator->getContext();
         $errors = $validatorContext->getErrors();
         if ($errors) {
-            return $errors;
+            return new JsonResponse(['errors' => $errors], 500);
         }
 
+        $this->cache->invalidateTags(['product']);
+
         // Flush entity
-        $this->bus->dispatch(new ElasticsearchProductMessage($id));
+        $this->bus->dispatch(new ElasticsearchProductMessage($product->getId()));
+        return new JsonResponse();
     }
 
     /**
@@ -125,11 +145,14 @@ final class ProductController
      *
      * @param int $id
      */
-    public function delete(int $id)
+    public function delete(Product $product): JsonResponse
     {
+        // Delete product
+
         $this->cache->invalidateTags(['product']);
 
-        $this->bus->dispatch(new ElasticsearchProductMessage($id, true));
+        $this->bus->dispatch(new ElasticsearchProductMessage($product->getId(), true));
+        return new JsonResponse();
     }
 
     /**
@@ -138,16 +161,18 @@ final class ProductController
      * @param Product $product
      * @param ProductImage $productImage
      */
-    public function deleteImage(Product $product, ProductImage $productImage)
+    public function deleteImage(Product $product, ProductImage $productImage): JsonResponse
     {
         $this->cache->invalidateTags(['product']);
         // Delete image
+
+        return new JsonResponse();
     }
 
     /**
      * Add image to product
      */
-    public function addImage(Product $product)
+    public function addImage(Product $product): JsonResponse
     {
         $this->cache->invalidateTags(['product']);
         // Upload image
@@ -156,9 +181,11 @@ final class ProductController
         $validatorContext = $this->validator->getContext();
         $errors = $validatorContext->getErrors();
         if ($errors) {
-            return $errors;
+            return new JsonResponse(['errors' => $errors], 500);
         }
 
         // Flush entity
+
+        return new JsonResponse();
     }
 }

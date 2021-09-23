@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Cache;
 
-class RedisCache implements CacheInterface
+final class RedisCache implements CacheInterface
 {
     /**
      * @inheritDoc

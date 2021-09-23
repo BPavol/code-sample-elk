@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Repository;
 
 abstract class AbstractRepository
@@ -8,8 +10,9 @@ abstract class AbstractRepository
      * Return exactly one entry
      *
      * @param $id
+     * @return object|null
      */
-    public function find($id): object
+    public function find($id): ?object
     {
 
     }
@@ -19,6 +22,7 @@ abstract class AbstractRepository
      *
      * @param int|null $limit
      * @param int|null $offset
+     * @return array
      */
     public function findAll(?int $limit = null, ?int $offset = null): array
     {
@@ -31,6 +35,7 @@ abstract class AbstractRepository
      * @param array $criteria
      * @param int|null $limit
      * @param int|null $offset
+     * @return array
      */
     public function findBy(array $criteria, ?int $limit = null, ?int $offset = null): array
     {

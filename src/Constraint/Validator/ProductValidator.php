@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace App\Constraint\Validator;
 
 use App\Constraint\ConstraintInterface;
@@ -10,7 +12,7 @@ final class ProductValidator extends AbstractValidator
     /**
      * @inheritDoc
      */
-    public function validate(ConstraintInterface $constraint, $value)
+    public function validate(ConstraintInterface $constraint, $value): void
     {
         if (!($value instanceof Product)) {
             throw new \Exception(sprintf('Constraint require Product entity, %s given', gettype($value)));
